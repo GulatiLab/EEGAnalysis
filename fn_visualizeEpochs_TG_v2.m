@@ -23,7 +23,7 @@ end; hold off;
 xlim([1 sz(2)]);
 ylim([-100 2400]);
 yticks(100:100:2200)
-yticklabels({'Fp1','F7','T3','T5','O1','F3','C3','P3','A1','Fz','Cz','Fp2','F8','T4','T6','O2','F4','C4','P4','A2','Fpz','Pz'})
+yticklabels({'Fp1 - F7','F7 - T3','T3 - T5','T5 - O1','Fp2 - F8','F8 - T4','T4 - T6','T6 - O2','A1 - T3','T3 - C3','C3 - Cz','Cz - C4','C4 - T4','T4 - A2','Fp1 - F3','F3 - C3','C3 - P3','P3 - O1','Fp2 - F4','F4 - C4','C4 - P4','P4 - O2'})
 ax=gca;
 ax.YGrid = 'on'; %ax.GridLineStyle = ':';
 set(gca,'FontSize',16,'FontWeight','bold');
@@ -61,7 +61,7 @@ while ~exit
     xlim([1 sz(2)]);
     ylim([-100 2400]);
     yticks(100:100:2200)
-    yticklabels({'Fp1','F7','T3','T5','O1','F3','C3','P3','A1','Fz','Cz','Fp2','F8','T4','T6','O2','F4','C4','P4','A2','Fpz','Pz'})
+    yticklabels({'Fp1 - F7','F7 - T3','T3 - T5','T5 - O1','Fp2 - F8','F8 - T4','T4 - T6','T6 - O2','A1 - T3','T3 - C3','C3 - Cz','Cz - C4','C4 - T4','T4 - A2','Fp1 - F3','F3 - C3','C3 - P3','P3 - O1','Fp2 - F4','F4 - C4','C4 - P4','P4 - O2'})
     ax=gca;
 ax.YGrid = 'on'; %ax.GridLineStyle = ':';
 set(gca,'FontSize',16, 'FontWeight','bold');
