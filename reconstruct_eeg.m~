@@ -1,0 +1,12 @@
+function [eeg_new sleep_idx artifact_idx]=reconstruct_eeg(epochs, sleepepochs)
+
+tmp=[]
+for i=1:size(epochs,3)
+    if intersec
+    tmp= [tmp, epochs(:,:,i)];
+    display(i)
+end
+    eeg_new= tmp;
+    sleep_idx =1
+    artifact_idx=2
+end

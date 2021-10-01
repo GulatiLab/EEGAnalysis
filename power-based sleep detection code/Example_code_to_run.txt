@@ -1,0 +1,1 @@
+[sleep_idx artifact_idx pwr_out] = sleep_classification2(LFPs(:,ch_to_analyze),0,Fs_LFP);
