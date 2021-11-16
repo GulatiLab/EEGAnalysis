@@ -1,4 +1,4 @@
-function spindles = detect_spindles2_TG(lfp,varargin)
+function spindles = detect_spindles(lfp,varargin)
 %% [spindles] = detect_spindles(lfp)
 %   looks for threshold crossings of the
 %   envelope of a specific frequency band
@@ -34,7 +34,7 @@ function spindles = detect_spindles2_TG(lfp,varargin)
 %% INPUTS
 Fs = 2.44140625 / 24;
 sleep_idx = cell(1,3);
-fpass = [10,15];
+fpass = [10,18];
 PLOT = 0;
 artifact_idx = cell(1,3);
 single_thresh = 1;

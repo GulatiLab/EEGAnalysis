@@ -50,7 +50,7 @@ elseif nargin==3,
 elseif nargin==4,
     Fs = varargin{1};
     window = varargin{2};
-    thresh = 10;
+    thresh = 5;
 elseif nargin==5,
     Fs = varargin{1};
     window = varargin{2};
@@ -104,8 +104,11 @@ lfp(artifact_idx) = randn(sum(artifact_idx),1)*std(lfp(not_artifact)) + mean(lfp
 %% get pwr in delta and gamma bands
 % frequency bands
 fpass = {
-    [.5,4]  % delta
-    [40,70] % gamma
+    [.1,4]  % delta
+%     [4,8]  % theta
+    [8,12]  % alpha
+%     [12,20]  % Sigma
+%     [40,70] % gamma
     };
 
 idx = 1:samples;
@@ -138,7 +141,7 @@ pwr_out = mean(pwr( sleep_idx,:),1);
 pwr_out = cat(1,pwr_out,mean(pwr(~sleep_idx,:),1));
 
 %% must have at least 60sec in a row to count as sleep
-Nwin = floor(30 / window);
+Nwin = floor( 60 / window); 
 tmp = cat(1,0,sleep_idx);
 upidx = find(diff(tmp)==1);
 tmp = cat(1,sleep_idx,0);
@@ -186,6 +189,7 @@ if PLOT==1
 end
 
 %% sleep_idx per window to sleep_idx per lfp index
+sleepepoch_idx = sleep_idx;
 sleep_idx = repmat(sleep_idx(:),1,samples);
 sleep_idx = reshape(sleep_idx',T*samples,1);
 sleep_idx = [sleep_idx;zeros(size(lfp,1)-size(sleep_idx,1),1)];
@@ -210,7 +214,11 @@ if nargout>1,
     varargout{2} = artifact_idx';
 end
 if nargout>2,
+    varargout{3} = sleepepoch_idx;
+end
+if nargout>3,
     varargout{3} = pwr_out;
 end
+
 
 

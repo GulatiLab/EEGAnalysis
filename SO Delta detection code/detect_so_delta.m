@@ -25,6 +25,7 @@ function out = detect_so_delta(lfp,Fs,varargin)
 %       'PLOT' - [0|1]
 %       'sleep_classify' - [0|1], only for classified sleep (sleep_idx)
 %       'mnl_parm' - [peak-thr trough-thr dur-min dur-max] or [peak-thr trough-thr dur-min dur-max high-pass low-pass] manual parameter setting
+%       'DEBUG' - true/false, for plotting filtered signal and debugging
 % 
 %   Outputs:
 %       out
@@ -40,6 +41,8 @@ PLOT = 1;
 mnl_parm=[85 40 .15 .5];
 artifact_idx = zeros(size(lfp,1),1)==1;
 sleep_classify=1;
+ChannelName = [];
+DEBUG = false;
 %%
 assignopts(who,varargin);
 
@@ -65,7 +68,32 @@ if length(mnl_parm)==4, fpass = [.1,4];%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 elseif length(mnl_parm)==6, fpass=mnl_parm(5:6); end
 lfp_delta = filter_delta(lfp,Fs,fpass);
 
-%% POS-TO-NEG ZERO CROSSINGS
+% 
+% %% ORGANIZE LFP
+% if sleep_classify==0, sleep_idx = ones(size(lfp_delta,1),1)==1; end
+% % sizing
+% [N,num_ch] = size(lfp_delta);
+
+%% Plot filtered signal
+if DEBUG
+%     figure;
+    subplot(8,2,(DEBUG-1)*2+1)
+    time = (1:size(lfp,1))'/Fs;
+    plot(time,mean(lfp,2))
+    xlim([time(1),time(end)])
+%     ylim(
+    xlabel('time (sec)')
+    ylabel('Raw EEG')
+    subplot(8,2,(DEBUG-1)*2+2)
+    time = (1:size(lfp_delta,1))'/Fs;
+    plot(time,mean(lfp_delta,2))
+    xlim([time(1),time(end)])
+    xlabel('time (sec)')
+    ylabel('delta')
+%     hold off;
+end
+
+%% POS-TO-NEG ZERO CROSSINGS(ptnzc)
 idx = round(Fs):(N-round(Fs));
 ptnzc = round(Fs)-1 + find(lfp_delta(idx)>=0 & lfp_delta(idx+1)<0 & sleep_idx(idx)==1);
 
@@ -109,42 +137,49 @@ out.delta_troughs = next_trough(idx2);
 if PLOT,
     data_txt={'so','delta'};
     for data_i=1:2
-        figure;
+        
+        % To plot filtered and average with shaded error delta and so
+        % over 8 channels
         cc = get(gca,'ColorOrder');
-
-        clf
-        set(gcf,'Name',sprintf(data_txt{data_i}))
-        set(gcf,'Position',[680,620-460*(data_i-1),980,360])
-
-        subplot(2,3,1), hold on
+        index = (PLOT-1)*4+(data_i-1)*2+1;
+        subplot(8,4,index), hold on
+        title(ChannelName(1))
         ref_time=eval(['out.' data_txt{data_i} '_up_states']);
         ref_time(ref_time<2 | ref_time>time(end)-2) = [];
-        [W,t] = triggered_lfp(lfp,Fs,ref_time,[2,2]);
+        [W,t] = triggered_lfp(lfp_delta,Fs,ref_time,[2,2]);
         shadedErrorBar(t,mean(W{1},2),std(W{1},[],2),{'-','Color',cc(1,:)},1)
         xlim([t(1),t(end)])
+        label = num2str(index);
+        xlabel(data_txt{data_i})
+        
+        subplot(8,4,index+1);
+        title(ChannelName(1));
+        plot(t,(W{1}));
+        
 
-        t = 0:.1:10;
-        subplot(2,3,4), hold on
-        isi = diff(eval(['out.' data_txt{data_i} '_up_states']));
-        histogram(isi,0:.2:10,'Normalization','pdf')
-        lam = lognfit(isi);
-        plot(t,lognpdf(t,lam(1),lam(2)),'LineWidth',2)
-        [mx,idx] = max(lognpdf(t,lam(1),lam(2)));
-        plot(t(idx),mx,'k*','MarkerSize',10)
-        text(t(idx)+1,mx,sprintf('Peak @ %.2fHz',1/t(idx)))
-        xlabel('sec')
-        ylabel('Autocorrelation')
-
-        ax(1)=subplot(2,3,2:3); hold on
-        plot(time,lfp,'Color',cc(1,:))
-        plot(time(sleep_idx),repmat(1*max(lfp),sum(sleep_idx),1),'.','Color',cc(2,:))
-
-        ax(2)=subplot(2,3,5:6); hold on
-        plot(time,lfp_delta,'Color',cc(1,:))
-        plot(eval(['out.' data_txt{data_i} '_up_states']),eval(['out.' data_txt{data_i} '_peaks']),'k*')
-        hline(thresh,'k-')
-        hline(0,'k--')    
-        linkaxes(ax,'x')
+%         -----Older code to plot delta and so------ 
+%         t = 0:.1:10;
+%         subplot(2,3,4), hold on
+%         isi = diff(eval(['out.' data_txt{data_i} '_up_states']));
+%         histogram(isi,0:.2:10,'Normalization','pdf')
+%         lam = lognfit(isi);
+%         plot(t,lognpdf(t ,lam(1),lam(2)),'LineWidth',2)
+%         [mx,idx] = max(lognpdf(t,lam(1),lam(2)));
+%         plot(t(idx),mx,'k*','MarkerSize',10)
+%         text(t(idx)+1,mx,sprintf('Peak @ %.2fHz',1/t(idx)))
+%         xlabel('sec')
+%         ylabel('Autocorrelation')
+% 
+%         ax(1)=subplot(2,3,2:3); hold on
+%         plot(time,lfp,'Color',cc(1,:))
+%         plot(time(sleep_idx),repmat(1*max(lfp),sum(sleep_idx),1),'.','Color',cc(2,:))
+% 
+%         ax(2)=subplot(2,3,5:6); hold on
+%         plot(time,lfp_delta,'Color',cc(1,:))
+%         plot(eval(['out.' data_txt{data_i} '_up_states']),eval(['out.' data_txt{data_i} '_peaks']),'k*')
+%         hline(thresh,'k-')
+%         hline(0,'k--')    
+%         linkaxes(ax,'x')
     end
 end
 end 
@@ -211,7 +246,6 @@ function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
     % Error checking    
     error(nargchk(3,5,nargin))
-
 
     %Process y using function handles if needed to make the error bar
     %dynamically
