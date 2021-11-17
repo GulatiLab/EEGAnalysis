@@ -1,4 +1,4 @@
-function spindles = detect_spindles2_TG_slow(lfp,varargin)
+function spindles = detect_spindles2_TG(lfp,varargin)
 %% [spindles] = detect_spindles(lfp)
 %   looks for threshold crossings of the
 %   envelope of a specific frequency band
@@ -32,17 +32,19 @@ function spindles = detect_spindles2_TG_slow(lfp,varargin)
 %
 
 %% INPUTS
-Fs = 2.44140625 / 24;
+Fs = 256;
 sleep_idx = cell(1,3);
-fpass = [10,13];
+fpass = [10,16];
 PLOT = 0;
 artifact_idx = cell(1,3);
 single_thresh = 1;
 avg_flag = 0;
 bad_channels = [];
 sleep_classify=1;
-assignopts(who,varargin);
+ChannelName = [];
 DEBUG = false;
+assignopts(who,varargin);
+
 
 
 %% SIZING INFO
@@ -78,6 +80,13 @@ for s=1:NumSessions,
     flfp{s} = filtfilt(blow,alow,flfp{s});
 end
 
+%% Plot filtered signal for debugging, etc.
+
+if DEBUG
+    subplot(8,1,DEBUG)
+    plot(flfp{s});
+end
+
 %% ZSCORE LFP
 for s=1:NumSessions,
     zlfp{s} = flfp{s};
@@ -107,7 +116,7 @@ if single_thresh,
     high = mu + 2.5*sigma; % 2.5
     % can also try percentiles
 %     low = prctile(total_sleep_H,85); 
-%     high = prctile(total_sleep_H,95); 
+%     high = prctile(total_sleep_H,90); 
     low_thresh = repmat(low,1,NumSessions);
     high_thresh = repmat(high,1,NumSessions);
 else
@@ -119,8 +128,8 @@ else
         low = mu + 1.5*sigma; % 1.5
         high = mu + 2.5*sigma; % 2.5
         % can also try percentiles
-%         low = prctile(H{s},85); 
-%         high = prctile(H{s},95); 
+%         low = prctile(H{s},80); 
+%         high = prctile(H{s},90); 
         low_thresh(s) = low;
         high_thresh(s) = high;
     end
@@ -160,7 +169,7 @@ for s=1:NumSessions,
     
     % REMOVE SPINDLES WITH DURATION < 400MS (< 3 CYCLES)
     dur = finish - start;
-    idx = dur>.3 & dur<2;
+    idx = dur>.4 & dur<2;
     startidx = startidx(idx);
     finishidx = finishidx(idx);
     dur = dur(idx);
@@ -170,7 +179,7 @@ for s=1:NumSessions,
     npksidx = zeros(size(startidx));
     for i=1:length(startidx),
         idx0 = startidx(i);
-        idxf = finishidx(i);
+        idxf = finishidx(i); 
         pksidx(i) = idx0 + find(flfp{s}(idx0:idxf)==max(flfp{s}(idx0:idxf)))-1;
         npksidx(i) = idx0 + find(flfp{s}(idx0:idxf)==min(flfp{s}(idx0:idxf)))-1;
     end
@@ -181,7 +190,20 @@ for s=1:NumSessions,
         idx0 = startidx(i);
         idxf = finishidx(i);
         amp(i) = max(H{s}(idx0:idxf));
+        % Remove spindles with peak ampliotude higher than 5 time high
+        % threshold
+        if amp(i)>5*high
+           idx(i) = [];
+           startidx(i) = [];
+           finishidx(i) = [];
+           dur(i) = [];
+           pksidx(i) = [];
+           npksidx(i) = [];
+           break;
+        end
     end
+    
+%     display(size(pksidx));
 
     % CONVERT FROM INDICES TO TIME
     spindles{s}.pks = time{s}(pksidx);
@@ -202,27 +224,35 @@ if PLOT,
         low = low_thresh(s);
         high = high_thresh(s);
         
-        figure;
+        % Plot detected spindles and average spindles with shaded error bar
+        % over 8 channels.
         cc = get(gca,'ColorOrder');
         set(gcf,'Name',sprintf('Spindle_Oscillations'))
         set(gcf,'Position',[680,620,980,360])
-        subplot(2,3,[1,4]), hold on
+        subplot(8,2,(PLOT-1)*2+1), hold on
+        title(ChannelName(1));
         [W,t] = triggered_lfp(zlfp{s},Fs,spindles{s}.pks,[1,1]);
         shadedErrorBar(t,mean(W{1},2),std(W{1},[],2),{'-','Color',cc(1,:)},1)
         xlim([t(1),t(end)])
         hline([low,high])
         
-        ax(1)=subplot(2,3,2:3); hold on
-        sig = mean(lfp{s},2);
-        plot(time{s},sig,'Color',cc(1,:))
-        plot(time{s}(sleep_idx{s}),repmat(1*max(sig),sum(sleep_idx{s}),1),'.','Color',cc(2,:))
-        
-        ax(2)=subplot(2,3,5:6); hold on
-        plot(time{s},zlfp{s},'Color',cc(1,:))
-        plot(spindles{s}.pks,zlfp{s}(spindlesidx{s}),'k*')
+        subplot(8,2,(PLOT-1)*2+2)
+        title(ChannelName(1));
+        plot(t,(W{1}));
         hline([low,high])
-        
-        linkaxes(ax,'x')
+
+%         --- Older code to plot spindles ---        
+%         ax(1)=subplot(2,3,2:3); hold on
+%         sig = mean(lfp{s},2);
+%         plot(time{s},sig,'Color',cc(1,:))
+%         plot(time{s}(sleep_idx{s}),repmat(1*max(sig),sum(sleep_idx{s}),1),'.','Color',cc(2,:))
+%         
+%         ax(2)=subplot(2,3,5:6); hold on
+%         plot(time{s},zlfp{s},'Color',cc(1,:))
+%         plot(spindles{s}.pks,zlfp{s}(spindlesidx{s}),'k*')
+%         hline([low,high])
+%         
+%         linkaxes(ax,'x')
     end
 end % plot
 end % detect_spindles
@@ -539,10 +569,7 @@ function hhh=hline(y,in1,in2)
             linetype=in1;
             label=in2;
         end
-
-
-
-
+        
         g=ishold(gca);
         hold on
 
