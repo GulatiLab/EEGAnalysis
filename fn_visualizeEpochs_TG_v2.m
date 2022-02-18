@@ -28,8 +28,9 @@ ax=gca;
 ax.YGrid = 'on'; %ax.GridLineStyle = ':';
 set(gca,'FontSize',16,'FontWeight','bold');
 hold on;
-uicontrol('style','text','string','Sleep Epochs','position',[50 50 80 20],'backgroundcolor',[.8 .8 .8]);
-markerframes(1)=uicontrol('style','text','string','','HorizontalAlignment','left','position',[105,7,1394,40]);
+tb = uicontrol('style','togglebutton','string','Bad Epoch','position',[20 70 80 20]);
+%uicontrol('style','text','string','Sleep Epochs','position',[50 50 80 20],'backgroundcolor',[.8 .8 .8]);
+markerframes(1)=uicontrol('style','text','string','','HorizontalAlignment','left','position',[20,5,1394,60]);
 hold off;
 
 while ~exit
@@ -39,14 +40,26 @@ while ~exit
         case 32 % space
             if sum(sleepepochs == n)
                 sleepepochs(sleepepochs==n)=[];
+                set(tb,'Value',0); %toggle bad epoch to '0'
             else
                 sleepepochs=[sleepepochs, n];
+                set(tb,'Value',1); %toggle bad epoch to '1'
             end
             set(markerframes(1),'string',num2str(sleepepochs));
         case 28 % left
             n=n-1;
+            if sum(sleepepochs == n) %check if already marked bad epoch
+                set(tb,'Value',1);
+            else
+                set(tb,'Value',0);
+            end
         case 29 % right
             n=n+1;
+            if sum(sleepepochs == n) %check if already marked bad epoch
+                set(tb,'Value',1);
+            else
+                set(tb,'Value',0);
+            end
         case 101 % e to exit
             exit=1;
     end
