@@ -1,0 +1,48 @@
+%% EEG Analysis. 
+%  Authors - Aamir Abbasi & Tanuj Gulati
+%  -----------------------------------------------------------------------
+%% Run this script to identify sleep epochs in human EEG data.
+clear;clc;close all;
+disp('running');
+rootpath = 'D:\New_patient_data\EEG_data\'; % Change this path based on the location of the files in your computer
+eegfiles =  { 'xxxxxx_14acb982-496f-4c83-9940-28c90449057c'};
+step = 20;
+temp=[];
+number_of_chunks = 2; %how many chuncks to break the data into
+for i=1:length(eegfiles)
+    disp([rootpath,eegfiles{i},'.mat']);
+    load([rootpath,eegfiles{i},'.mat']);
+    fs = ALLEEG.srate; % sampling rate
+    time = ALLEEG.times;
+    eegsigs_all = ALLEEG.data;
+    chunk_size = length(eegsigs_all)/number_of_chunks;
+    sleepepochs_all = [];
+    epochs_all = [];
+    for n = 1:number_of_chunks
+        eegsigs = eegsigs_all(:,(n-1)*chunk_size+1:n*chunk_size);
+        % creating differential signal like xltech
+        temp=eegsigs;
+        temp=temp(1:22,:);
+        orders=[1,2,3,4,12,13,14,15,9,3,7,11,18,14,1,6,7,8,12,17,18,19; 2,3,4,5,13,14,15,16,3,7,11,18,14,20,6,7,8,5,17,18,19,16]';
+        temp1=temp(orders(:,1),:);
+        temp2=temp(orders(:,2),:);
+        temp4=temp1(:,:)-temp2(:,:);
+        eegsigs=temp4;
+        eegraw=temp;
+        %finished making differential signal
+        epochs = [];
+        bfr = 1:step:floor(length(eegsigs)/fs);
+        title1=eegfiles{i};
+        for j = bfr
+            if j ~= bfr(end)
+                epochs = cat(3,epochs,eegsigs(:,round(j*fs):round((j+step)*fs)));
+            end
+        end
+        sleepepochs = fn_visualizeEpochs_TG_v2(epochs,[], title1);
+        sleepepochs_all = cat(2,sleepepochs_all,sleepepochs+(n-1)*size(epochs,3));
+        epochs_all = cat(3,epochs_all,epochs);
+    end
+%     save([rootpath,'DATA_w_SleepEpochsID_',eegfiles{i},'.mat'],'sleepepochs_all','epochs_all','eegsigs','eegraw','fs','time')
+end
+
+%%

@@ -28,9 +28,10 @@ ax=gca;
 ax.YGrid = 'on'; %ax.GridLineStyle = ':';
 set(gca,'FontSize',16,'FontWeight','bold');
 hold on;
-tb = uicontrol('style','togglebutton','string','Bad Epoch','position',[20 70 80 20]);
-%uicontrol('style','text','string','Sleep Epochs','position',[50 50 80 20],'backgroundcolor',[.8 .8 .8]);
+% uicontrol('style','text','string','Sleep Epochs','position',[50 50 80 20],'backgroundcolor',[.8 .8 .8]);
+tb = uicontrol('style','togglebutton','string','Sleep Epoch','position',[20 70 80 20]);
 markerframes(1)=uicontrol('style','text','string','','HorizontalAlignment','left','position',[20,5,1394,60]);
+% lmp = uilamp('Position',[50 50 80 10],'Color','green');
 hold off;
 
 while ~exit
@@ -40,22 +41,28 @@ while ~exit
         case 32 % space
             if sum(sleepepochs == n)
                 sleepepochs(sleepepochs==n)=[];
-                set(tb,'Value',0); %toggle bad epoch to '0'
+                set(tb,'Value',0);
+%                 tb.text = "Bad epoch";
+%                 lm.Color = 'red';
             else
                 sleepepochs=[sleepepochs, n];
-                set(tb,'Value',1); %toggle bad epoch to '1'
+                set(tb,'Value',1);
+%                 tb.text = "Epoch";
+%                 lm.Color = 'green';
             end
             set(markerframes(1),'string',num2str(sleepepochs));
+
+%             tb.text = "Bad epoch";
         case 28 % left
             n=n-1;
-            if sum(sleepepochs == n) %check if already marked bad epoch
+            if sum(sleepepochs == n)
                 set(tb,'Value',1);
             else
                 set(tb,'Value',0);
             end
         case 29 % right
             n=n+1;
-            if sum(sleepepochs == n) %check if already marked bad epoch
+            if sum(sleepepochs == n)
                 set(tb,'Value',1);
             else
                 set(tb,'Value',0);
